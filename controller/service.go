@@ -180,12 +180,12 @@ func (c *controller) clearServiceState(key string, svc *v1.Service) {
 }
 
 func (c *controller) allocateIPs(key string, svc *v1.Service) ([]net.IP, error) {
-	if len(svc.Spec.ClusterIPs) == 0 {
+	if len(svc.Spec.ClusterIPs) == 0 && svc.Spec.ClusterIP == "" {
 		// (we should never get here because the caller ensured that Spec.ClusterIP != nil)
-		return nil, fmt.Errorf("invalid ClusterIP [%s], can't determine family", svc.Spec.ClusterIP)
+		return nil, fmt.Errorf("invalid ClusterIPs [%v] [%s], can't determine family", svc.Spec.ClusterIPs, svc.Spec.ClusterIP)
 	}
 
-	serviceIPFamily, err := ipfamily.ForAddresses(svc.Spec.ClusterIPs)
+	serviceIPFamily, err := ipfamily.ForService(svc)
 	if err != nil {
 		return nil, err
 	}
@@ -200,6 +200,7 @@ func (c *controller) allocateIPs(key string, svc *v1.Service) ([]net.IP, error) 
 		if serviceIPFamily != desiredLbIPFamily {
 			return nil, fmt.Errorf("requested loadBalancer IP(s) %q does not match the ipFamily of the service", desiredLbIPs)
 		}
+
 		if err := c.ips.Assign(key, desiredLbIPs, k8salloc.Ports(svc), k8salloc.SharingKey(svc), k8salloc.BackendKey(svc)); err != nil {
 			return nil, err
 		}
