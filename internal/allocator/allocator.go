@@ -15,6 +15,8 @@ import (
 	"github.com/mikioh/ipaddr"
 )
 
+var ErrCannotShareKey = errors.New("services can't share key")
+
 // An Allocator tracks IP address pools and allocates addresses from them.
 type Allocator struct {
 	pools map[string]*config.Pool
